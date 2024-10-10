@@ -200,6 +200,17 @@ SWIFT_NAME("BridgedASTContext.init(raw:)")
 BRIDGED_INLINE
 BridgedASTContext BridgedASTContext_fromRaw(void * _Nonnull ptr);
 
+SWIFT_NAME("BridgedASTContext.allocate(self:size:alignment:)")
+BRIDGED_INLINE
+void *_Nullable BridgedASTContext_allocate(BridgedASTContext bridged,
+                                           size_t size, size_t alignment);
+
+SWIFT_NAME("BridgedASTContext.allocateCopy(self:string:)")
+BRIDGED_INLINE
+BridgedStringRef
+BridgedASTContext_allocateCopyString(BridgedASTContext cContext,
+                                     BridgedStringRef cStr);
+
 SWIFT_NAME("BridgedASTContext.getIdentifier(self:_:)")
 BridgedIdentifier BridgedASTContext_getIdentifier(BridgedASTContext cContext,
                                                   BridgedStringRef cStr);
@@ -317,6 +328,7 @@ struct BridgedDeclObj {
   SWIFT_IMPORT_UNSAFE BRIDGED_INLINE BridgedStringRef Type_getName() const;
   SWIFT_IMPORT_UNSAFE BRIDGED_INLINE BridgedStringRef Value_getUserFacingName() const;
   SWIFT_IMPORT_UNSAFE BRIDGED_INLINE BridgedSourceLoc Value_getNameLoc() const;
+  BRIDGED_INLINE bool Value_isObjC() const;
   BRIDGED_INLINE bool GenericType_isGenericAtAnyLevel() const;
   BRIDGED_INLINE bool NominalType_isGlobalActor() const;
   SWIFT_IMPORT_UNSAFE BRIDGED_INLINE OptionalBridgedDeclObj NominalType_getValueTypeDestructor() const;
@@ -1309,6 +1321,16 @@ BridgedDotSelfExpr BridgedDotSelfExpr_createParsed(BridgedASTContext cContext,
                                                    BridgedSourceLoc cDotLoc,
                                                    BridgedSourceLoc cSelfLoc);
 
+SWIFT_NAME("BridgedErrorExpr.create(_:loc:)")
+BridgedErrorExpr BridgedErrorExpr_create(BridgedASTContext cContext,
+                                         BridgedSourceRange cRange);
+
+SWIFT_NAME("BridgedFloatLiteralExpr.createParsed(_:value:loc:)")
+BridgedFloatLiteralExpr
+BridgedFloatLiteralExpr_createParsed(BridgedASTContext cContext,
+                                     BridgedStringRef cStr,
+                                     BridgedSourceLoc cTokenLoc);
+
 SWIFT_NAME("BridgedForceTryExpr.createParsed(_:tryLoc:subExpr:exclaimLoc:)")
 BridgedForceTryExpr
 BridgedForceTryExpr_createParsed(BridgedASTContext cContext,
@@ -1320,6 +1342,18 @@ SWIFT_NAME(
 BridgedForcedCheckedCastExpr BridgedForcedCheckedCastExpr_createParsed(
     BridgedASTContext cContext, BridgedSourceLoc cAsLoc,
     BridgedSourceLoc cExclaimLoc, BridgedTypeRepr cType);
+
+SWIFT_NAME("BridgedUnresolvedSpecializeExpr.createParsed(_:subExpr:lAngleLoc:"
+           "arguments:rAngleLoc:)")
+BridgedUnresolvedSpecializeExpr BridgedUnresolvedSpecializeExpr_createParsed(
+    BridgedASTContext cContext, BridgedExpr cSubExpr,
+    BridgedSourceLoc cLAngleLoc, BridgedArrayRef cArguments,
+    BridgedSourceLoc cRAngleLoc);
+
+SWIFT_NAME("BridgedInOutExpr.createParsed(_:loc:subExpr:)")
+BridgedInOutExpr BridgedInOutExpr_createParsed(BridgedASTContext cContext,
+                                               BridgedSourceLoc cLoc,
+                                               BridgedExpr cSubExpr);
 
 SWIFT_NAME("BridgedIntegerLiteralExpr.createParsed(_:value:loc:)")
 BridgedIntegerLiteralExpr
@@ -1371,6 +1405,18 @@ BridgedPrefixUnaryExpr
 BridgedPrefixUnaryExpr_createParsed(BridgedASTContext cContext,
                                     BridgedExpr oper, BridgedExpr operand);
 
+SWIFT_NAME("BridgedRegexLiteralExpr."
+           "allocateCaptureStructureSerializationBuffer(_:size:)")
+BridgedData BridgedRegexLiteralExpr_allocateCaptureStructureSerializationBuffer(
+    BridgedASTContext cContext, SwiftInt size);
+
+SWIFT_NAME("BridgedRegexLiteralExpr.createParsed(_:loc:regexText:version:"
+           "captureStructure:)")
+BridgedRegexLiteralExpr BridgedRegexLiteralExpr_createParsed(
+    BridgedASTContext cContext, BridgedSourceLoc cLoc,
+    BridgedStringRef cRegexText, SwiftInt version,
+    BridgedData cCaptureStructure);
+
 SWIFT_NAME("BridgedSequenceExpr.createParsed(_:exprs:)")
 BridgedSequenceExpr BridgedSequenceExpr_createParsed(BridgedASTContext cContext,
                                                      BridgedArrayRef exprs);
@@ -1386,6 +1432,17 @@ BridgedStringLiteralExpr
 BridgedStringLiteralExpr_createParsed(BridgedASTContext cContext,
                                       BridgedStringRef cStr,
                                       BridgedSourceLoc cTokenLoc);
+
+SWIFT_NAME("BridgedSuperRefExpr.createParsed(_:superLoc:)")
+BridgedSuperRefExpr
+BridgedSuperRefExpr_createParsed(BridgedASTContext cContext,
+                                 BridgedSourceLoc cSuperLoc);
+
+SWIFT_NAME("BridgedSubscriptExpr.createParsed(_:baseExpr:args:)")
+BridgedSubscriptExpr
+BridgedSubscriptExpr_createParsed(BridgedASTContext cContext,
+                                  BridgedExpr cBaseExpr,
+                                  BridgedArgumentList cArgs);
 
 SWIFT_NAME("BridgedTapExpr.create(_:body:)")
 BridgedTapExpr BridgedTapExpr_create(BridgedASTContext cContext,
@@ -2014,6 +2071,7 @@ struct BridgedASTType {
   BRIDGED_INLINE bool isEscapable() const;
   BRIDGED_INLINE bool isNoEscape() const;
   BRIDGED_INLINE bool isInteger() const;
+  SWIFT_IMPORT_UNSAFE BRIDGED_INLINE BridgedASTType subst(BridgedSubstitutionMap substMap) const;
 };
 
 class BridgedCanType {
@@ -2041,8 +2099,10 @@ struct BridgedConformance {
   BRIDGED_INLINE bool isConcrete() const;
   BRIDGED_INLINE bool isValid() const;
   BRIDGED_INLINE bool isSpecializedConformance() const;
+  BRIDGED_INLINE bool isInheritedConformance() const;
   SWIFT_IMPORT_UNSAFE BRIDGED_INLINE BridgedASTType getType() const;
   SWIFT_IMPORT_UNSAFE BRIDGED_INLINE BridgedConformance getGenericConformance() const;
+  SWIFT_IMPORT_UNSAFE BRIDGED_INLINE BridgedConformance getInheritedConformance() const;
   SWIFT_IMPORT_UNSAFE BRIDGED_INLINE BridgedSubstitutionMap getSpecializedSubstitutions() const;
 };
 
@@ -2070,6 +2130,7 @@ struct BridgedSubstitutionMap {
   BRIDGED_INLINE BridgedSubstitutionMap(swift::SubstitutionMap map);
   BRIDGED_INLINE swift::SubstitutionMap unbridged() const;
   BRIDGED_INLINE BridgedSubstitutionMap();
+  BridgedOwnedString getDebugDescription() const;
   BRIDGED_INLINE bool isEmpty() const;
   BRIDGED_INLINE bool hasAnySubstitutableParams() const;
   BRIDGED_INLINE SwiftInt getNumConformances() const;

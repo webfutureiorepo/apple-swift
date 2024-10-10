@@ -1,10 +1,12 @@
-// RUN: %target-typecheck-verify-swift -enable-experimental-feature NonescapableTypes
+// RUN: %target-typecheck-verify-swift -enable-experimental-feature NonescapableTypes -disable-experimental-parser-round-trip
+// FIXME: Remove '-disable-experimental-parser-round-trip' (rdar://137636751).
 // REQUIRES: asserts
 
 struct BufferView : ~Escapable, ~Copyable {
   let ptr: UnsafeRawBufferPointer?
   let c: Int
-  init(_ ptr: UnsafeRawBufferPointer?, _ c: Int) -> dependsOn(ptr) Self {
+  @lifetime(borrow ptr)
+  init(_ ptr: UnsafeRawBufferPointer?, _ c: Int) {
     self.ptr = ptr
     self.c = c
   }

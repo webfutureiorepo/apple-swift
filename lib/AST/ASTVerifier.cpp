@@ -36,6 +36,7 @@
 #include "swift/AST/SourceFile.h"
 #include "swift/AST/Stmt.h"
 #include "swift/AST/TypeCheckRequests.h"
+#include "swift/AST/TypeRefinementContext.h"
 #include "swift/AST/TypeRepr.h"
 #include "swift/Basic/Assertions.h"
 #include "swift/Basic/SourceManager.h"
@@ -1109,16 +1110,6 @@ public:
       }
 
       if (S->hasResult()) {
-        if (auto *CD = dyn_cast<ConstructorDecl>(func)) {
-          if (!CD->hasLifetimeDependentReturn()) {
-            Out << "Expected ReturnStmt not to have a result. A constructor "
-                   "should not return a result. Returned expression: ";
-            S->getResult()->dump(Out);
-            Out << "\n";
-            abort();
-          }
-        }
-
         auto result = S->getResult();
         auto returnType = result->getType();
         // Make sure that the return has the same type as the function.
@@ -3882,23 +3873,15 @@ void swift::verify(SourceFile &SF) {
     return;
   Verifier verifier(SF, &SF);
   SF.walk(verifier);
+
+  // Verify the TypeRefinementContext hierarchy.
+  if (auto TRC = SF.getTypeRefinementContext()) {
+    TRC->verify(SF.getASTContext());
+  }
 }
 
 bool swift::shouldVerify(const Decl *D, const ASTContext &Context) {
-  if (!shouldVerifyGivenContext(Context))
-    return false;
-
-  if (const auto *ED = dyn_cast<ExtensionDecl>(D)) {
-    return shouldVerify(ED->getExtendedNominal(), Context);
-  }
-
-  const auto *VD = dyn_cast<ValueDecl>(D);
-  if (!VD) {
-    // Verify declarations without names everywhere.
-    return true;
-  }
-
-  return true;
+  return shouldVerifyGivenContext(Context);
 }
 
 void swift::verify(Decl *D) {

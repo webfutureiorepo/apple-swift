@@ -24,16 +24,17 @@
 #include "Debug.h"
 #include "Error.h"
 #include "TaskGroupPrivate.h"
+#include "TaskLocal.h"
 #include "TaskPrivate.h"
 #include "Tracing.h"
 #include "swift/ABI/Metadata.h"
 #include "swift/ABI/Task.h"
-#include "swift/ABI/TaskLocal.h"
 #include "swift/ABI/TaskOptions.h"
 #include "swift/Basic/Lazy.h"
 #include "swift/Runtime/Concurrency.h"
 #include "swift/Runtime/EnvironmentVariables.h"
 #include "swift/Runtime/HeapObject.h"
+#include "swift/Runtime/Heap.h"
 #include "swift/Threading/Mutex.h"
 #include <atomic>
 #include <new>
@@ -220,7 +221,7 @@ void NullaryContinuationJob::process(Job *_job) {
 
   auto *continuation = job->Continuation;
 
-  delete job;
+  swift_cxx_deleteObject(job);
 
   auto *context =
     static_cast<ContinuationAsyncContext*>(continuation->ResumeContext);
@@ -1396,7 +1397,9 @@ namespace continuationChecking {
 
 enum class State : uint8_t { Uninitialized, On, Off };
 
+#if !SWIFT_CONCURRENCY_EMBEDDED
 static std::atomic<State> CurrentState;
+#endif
 
 static LazyMutex ActiveContinuationsLock;
 static Lazy<std::unordered_set<AsyncTask *>> ActiveContinuations;
@@ -1718,7 +1721,7 @@ static NullaryContinuationJob*
 swift_task_createNullaryContinuationJobImpl(
     size_t priority,
     AsyncTask *continuation) {
-  auto *job = new NullaryContinuationJob(swift_task_getCurrent(),
+  auto *job = swift_cxx_newObject<NullaryContinuationJob>(swift_task_getCurrent(),
         static_cast<JobPriority>(priority), continuation);
 
   return job;

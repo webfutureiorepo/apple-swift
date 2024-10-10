@@ -13,6 +13,7 @@
 #ifndef SWIFT_AST_ASTBRIDGINGIMPL_H
 #define SWIFT_AST_ASTBRIDGINGIMPL_H
 
+#include "swift/AST/ASTContext.h"
 #include "swift/AST/Decl.h"
 #include "swift/AST/ProtocolConformance.h"
 #include "swift/AST/ProtocolConformanceRef.h"
@@ -29,6 +30,17 @@ void * _Nonnull BridgedASTContext_raw(BridgedASTContext bridged) {
 
 BridgedASTContext BridgedASTContext_fromRaw(void * _Nonnull ptr) {
   return *static_cast<swift::ASTContext *>(ptr);
+}
+
+BRIDGED_INLINE
+void *_Nullable BridgedASTContext_allocate(BridgedASTContext bridged,
+                                           size_t size, size_t alignment) {
+  return bridged.unbridged().Allocate(size, alignment);
+}
+
+BridgedStringRef BridgedASTContext_allocateCopyString(BridgedASTContext bridged,
+                                                      BridgedStringRef cStr) {
+  return bridged.unbridged().AllocateCopy(cStr.unbridged());
 }
 
 //===----------------------------------------------------------------------===//
@@ -50,6 +62,10 @@ BridgedStringRef BridgedDeclObj::Value_getUserFacingName() const {
 
 BridgedSourceLoc BridgedDeclObj::Value_getNameLoc() const {
   return BridgedSourceLoc(getAs<swift::ValueDecl>()->getNameLoc().getOpaquePointerValue());
+}
+
+bool BridgedDeclObj::Value_isObjC() const {
+  return getAs<swift::ValueDecl>()->isObjC();
 }
 
 bool BridgedDeclObj::GenericType_isGenericAtAnyLevel() const {
@@ -126,6 +142,10 @@ bool BridgedASTType::isInteger() const {
   return unbridged()->is<swift::IntegerType>();
 }
 
+BridgedASTType BridgedASTType::subst(BridgedSubstitutionMap substMap) const {
+  return {unbridged().subst(substMap.unbridged()).getPointer()};
+}
+
 //===----------------------------------------------------------------------===//
 // MARK: BridgedCanType
 //===----------------------------------------------------------------------===//
@@ -159,6 +179,10 @@ bool BridgedConformance::isSpecializedConformance() const {
   return swift::isa<swift::SpecializedProtocolConformance>(unbridged().getConcrete());
 }
 
+bool BridgedConformance::isInheritedConformance() const {
+  return swift::isa<swift::InheritedProtocolConformance>(unbridged().getConcrete());
+}
+
 BridgedASTType BridgedConformance::getType() const {
   return {unbridged().getConcrete()->getType().getPointer()};
 }
@@ -166,6 +190,11 @@ BridgedASTType BridgedConformance::getType() const {
 BridgedConformance BridgedConformance::getGenericConformance() const {
   auto *specPC = swift::cast<swift::SpecializedProtocolConformance>(unbridged().getConcrete());
   return {swift::ProtocolConformanceRef(specPC->getGenericConformance())};
+}
+
+BridgedConformance BridgedConformance::getInheritedConformance() const {
+  auto *inheritedConf = swift::cast<swift::InheritedProtocolConformance>(unbridged().getConcrete());
+  return {swift::ProtocolConformanceRef(inheritedConf->getInheritedConformance())};
 }
 
 BridgedSubstitutionMap BridgedConformance::getSpecializedSubstitutions() const {

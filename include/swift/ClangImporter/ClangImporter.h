@@ -485,7 +485,7 @@ public:
                         const llvm::DenseSet<clang::tooling::dependencies::ModuleID> &alreadySeenClangModules,
                         clang::tooling::dependencies::DependencyScanningTool &clangScanningTool,
                         InterfaceSubContextDelegate &delegate,
-                        llvm::TreePathPrefixMapper *mapper,
+                        llvm::PrefixMapper *mapper,
                         bool isTestableImport = false) override;
 
   void recordBridgingHeaderOptions(
@@ -718,8 +718,13 @@ ValueDecl *getImportedMemberOperator(const DeclBaseName &name,
 } // namespace importer
 
 struct ClangInvocationFileMapping {
+  /// Mapping from a file name to an existing file path.
   SmallVector<std::pair<std::string, std::string>, 2> redirectedFiles;
+
+  /// Mapping from a file name to a string of characters that represents the
+  /// contents of the file.
   SmallVector<std::pair<std::string, std::string>, 1> overridenFiles;
+
   bool requiresBuiltinHeadersInSystemModules;
 };
 

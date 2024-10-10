@@ -230,6 +230,7 @@ EXPERIMENTAL_FEATURE(NamedOpaqueTypes, false)
 EXPERIMENTAL_FEATURE(FlowSensitiveConcurrencyCaptures, false)
 EXPERIMENTAL_FEATURE(CodeItemMacros, false)
 EXPERIMENTAL_FEATURE(PreambleMacros, false)
+EXPERIMENTAL_FEATURE(MacrosOnImports, true)
 EXPERIMENTAL_FEATURE(TupleConformances, false)
 EXPERIMENTAL_FEATURE(FullTypedThrows, false)
 EXPERIMENTAL_FEATURE(SameElementRequirements, false)
@@ -411,8 +412,11 @@ EXPERIMENTAL_FEATURE(WarnUnsafe, true)
 /// Import unsafe C and C++ constructs as @unsafe.
 EXPERIMENTAL_FEATURE(SafeInterop, true)
 
-// isolated deinit
-EXPERIMENTAL_FEATURE(IsolatedDeinit, true)
+/// Ignore resilience errors due to C++ types.
+EXPERIMENTAL_FEATURE(AssumeResilientCxxTypes, true)
+
+// Isolated deinit
+SUPPRESSIBLE_EXPERIMENTAL_FEATURE(IsolatedDeinit, true)
 
 // Enable values in generic signatures, e.g. <let N: Int>
 EXPERIMENTAL_FEATURE(ValueGenerics, true)
